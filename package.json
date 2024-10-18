@@ -1,0 +1,56 @@
+{
+  "name": "recording",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@ffmpeg/core": "^0.12.6",
+    "@ffmpeg/ffmpeg": "^0.12.10",
+    "@vueup/vue-quill": "^1.2.0",
+    "axios": "^1.7.4",
+    "browser-md5-file": "^1.1.1",
+    "core-js": "^3.8.3",
+    "crypto-js": "^4.2.0",
+    "element-plus": "^2.8.0",
+    "file-saver": "^2.0.5",
+    "js-audio-recorder": "^0.5.7",
+    "markdown-it": "^14.1.0",
+    "quill": "^2.0.2",
+    "register-service-worker": "^1.7.2",
+    "uuid": "^10.0.0",
+    "vue": "^3.2.13",
+    "vue-class-component": "^8.0.0-0",
+    "vue-quill-editor": "^3.0.6",
+    "vue-router": "^4.0.3",
+    "vuex": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@typescript-eslint/eslint-plugin": "^5.4.0",
+    "@typescript-eslint/parser": "^5.4.0",
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-eslint": "~5.0.0",
+    "@vue/cli-plugin-pwa": "~5.0.0",
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-plugin-typescript": "~5.0.0",
+    "@vue/cli-plugin-vuex": "~5.0.0",
+    "@vue/cli-service": "~5.0.0",
+    "@vue/eslint-config-airbnb": "^6.0.0",
+    "@vue/eslint-config-typescript": "^9.1.0",
+    "eslint": "^7.32.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-vue": "^8.0.3",
+    "eslint-plugin-vuejs-accessibility": "^1.1.0",
+    "lint-staged": "^11.1.2",
+    "sass": "^1.32.7",
+    "sass-loader": "^12.0.0",
+    "typescript": "^5.5.4"
+  },
+  "gitHooks": {
+    "pre-commit": "lint-staged"
+  }
+}
