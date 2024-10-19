@@ -30,10 +30,12 @@ import {
     defineComponent, onUnmounted, inject, Ref, ref, watch, onMounted,
 } from 'vue';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex'; // 导入 useStore
 
 export default defineComponent({
     setup() {
         const router = useRouter();
+        const $store = useStore();
         const currentIndex = ref('0');
         const neirongIndex = ref(0);
         const itemList: Ref<{ name: string; path: string; select: boolean; recordInfo: Record<string, unknown> }[]> = inject('itemList', ref([]));
@@ -53,8 +55,17 @@ export default defineComponent({
             }
             if (itemList) {
                 currentIndex.value = '0';
-                neirongIndex.value = 1;
+                // neirongIndex.value = 2;
                 watch(itemList, (newValue) => {
+                    if ($store.state.currentIndex === 1) {
+                        neirongIndex.value = 2;
+                    } else if ($store.state.currentIndex === 2) {
+                        neirongIndex.value = 3;
+                    } else if ($store.state.currentIndex === 3) {
+                        neirongIndex.value = 1;
+                    } else {
+                        neirongIndex.value = $store.state.currentIndex;
+                    }
                     console.log('itemListnewValue', newValue);
                     if (itemList.value.length > 0) {
                         const itemToMove = itemList.value.splice(3, 1)[0]; // 从数组中移除并获取第四个元素
@@ -106,6 +117,15 @@ export default defineComponent({
         }
         function handleNeieongClick(item: { name: string; path: string; recordInfo: Record<string, unknown> }, value: number) {
             neirongIndex.value = value;
+            if (value === 1) {
+                $store.commit('setCurrentIndex', 3);
+            } else if (value === 2) {
+                $store.commit('setCurrentIndex', 1);
+            } else if (value === 3) {
+                $store.commit('setCurrentIndex', 2);
+            } else {
+                $store.commit('setCurrentIndex', value);
+            }
             localStorage.setItem('recordInfo', JSON.stringify(item.recordInfo));
             router.push(item.path);
         }

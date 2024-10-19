@@ -41,6 +41,14 @@
             </el-tabs>
         </el-card>
     </div>
+    <el-dialog v-model="dialogTableVisibleIndex" show-close="false" title="请选择文档" width="30%">
+        <div class="dialog-content">
+            <div class="dialog-content-item" v-for="(item, index) in dialogListIndex" :key="index">
+                <div class="dialog-content-item-title">{{ item.name }}</div>
+                <el-button @click="handleDialogClickIndex(index)">确定</el-button>
+            </div>
+        </div>
+    </el-dialog>
 </template>
 <script>
 import { quillEditor } from 'vue-quill-editor/src';
@@ -52,6 +60,7 @@ import axiosInstance from '@/api/axios';
 import { ElLoading, ElMessage } from 'element-plus';
 import { inject, onMounted } from 'vue';
 import { processDictToArray } from '@/utils/utils';
+import { useStore } from 'vuex';
 
 export default {
     components: {
@@ -61,6 +70,7 @@ export default {
         const chatDialog = inject('chatDialog');
         const zhanshigaoduRef = inject('zhanshigaodu');
         const itemList = inject('itemList');
+        const store = useStore();
         function updateItemList(newValue) {
             itemList.value = newValue;
         }
@@ -72,6 +82,7 @@ export default {
         return {
             chatDialog,
             updateItemList,
+            store,
         };
     },
     data() {
@@ -102,12 +113,29 @@ export default {
                     ],
                 },
             }, // 编辑器配置项
+            dialogTableVisibleIndex: false,
+            dialogListIndex: [
+                { name: '治安调解协议书' },
+                { name: '人民调解受理登记表' },
+            ], // 弹出窗列表
+            dialogTableVisibleIndexRouter: '',
         };
     },
     mounted() {
+        // this.dialogTableVisibleIndex = this.store.state.CurrentDialogTableVisibleIndex;
         this.initData();
     },
     methods: {
+        // 选择调解协议文档类型
+        handleDialogClickIndex(index) {
+            // 此处只是试用 store
+            this.store.commit('setDialogTableVisibleIndex', index);
+            // this.store.commit('setCurrentDialogTableVisibleIndex');
+            // this.dialogTableVisibleIndex = this.store.state.CurrentDialogTableVisibleIndex;
+            // this.initData();
+            this.dialogTableVisibleIndex = false;
+            this.shengchengwendang();
+        },
         dianjibiaoqian(item) {
             console.log(item);
             if (this.chatDialog) {
@@ -147,11 +175,14 @@ export default {
                 this.tiquneironglist = [];
                 const keys = Object.keys(result.result);
                 if (this.documentList.length <= 0) {
+                    const mainFacts = ` ${this.gettiquneironglistString(result.result['主要事实'])}\n `;
+                    const mediationAgreement = ` ${this.gettiquneironglistString(result.result['调解协议'])}\n `;
+                    console.log('mediationAgreement', mediationAgreement);
                     let xieyitemp = '';
                     keys.forEach((key) => {
-                        xieyitemp += `${key}：${this.gettiquneironglistString(result.result[key])}\n\n`;
+                        xieyitemp += `${key}：${this.gettiquneironglistString(result.result[key])}\n`;
                     });
-                    const tempneirong = this.setmobanneirong(xieyitemp, '');
+                    const tempneirong = this.setmobanneirong(mainFacts, mediationAgreement, xieyitemp);
                     const tempobj = {
                         name: '版本1',
                         num: 1,
@@ -167,14 +198,14 @@ export default {
                     });
                     this.selectedActivenum = 0;
                 } else {
-                    // let xieyitemp = '';
                     const mainFacts = ` ${this.gettiquneironglistString(result.result['主要事实'])}\n `;
                     const mediationAgreement = ` ${this.gettiquneironglistString(result.result['调解协议'])}\n `;
                     console.log('mediationAgreement', mediationAgreement);
-                    // keys.forEach((key) => {
-                    //     xieyitemp += `${key}：${this.gettiquneironglistString(result.result[key])}\n`;
-                    // });
-                    const tempneirong = this.setmobanneirong(mainFacts, mediationAgreement, '');
+                    let xieyitemp = '';
+                    keys.forEach((key) => {
+                        xieyitemp += `${key}：${this.gettiquneironglistString(result.result[key])}\n`;
+                    });
+                    const tempneirong = this.setmobanneirong(mainFacts, mediationAgreement, xieyitemp);
                     const document = this.documentList[this.documentList.length - 1];
                     const numStr = document.num + 1;
                     // console.log('xieyitemp', xieyitemp);
@@ -310,7 +341,8 @@ export default {
                             } else {
                                 this.documentList = [];
                                 this.isshuoshengcehng = true;
-                                this.shengchengwendang();
+                                this.dialogTableVisibleIndex = true;
+                                // this.shengchengwendang();
                             }
                         }
                     });
@@ -319,7 +351,7 @@ export default {
                 console.error('根据记录ID获取所有文书失败:', error);
             });
         },
-        setmobanneirong(mainFacts, iationAgreement, nameList) {
+        setmobanneirong(mainFacts, iationAgreement, responseValue) {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -349,74 +381,126 @@ export default {
             });
             const locationname = this.response.locationName;
             const personname = this.response.personName;
-            return [
-                { attributes: { bold: true, size: 'huge' }, insert: '人民调解协议书' },
-                { attributes: { align: 'center' }, insert: '\n' },
-                { attributes: { size: 'large' }, insert: '编号_______字 [    ] _______号 ' },
-                { attributes: { align: 'right' }, insert: '\n' },
-                // 当事人信息
-                { attributes: { size: 'large' }, insert: '当事人姓名' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
-                { attributes: { size: 'large' }, insert: '性别' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
-                { attributes: { size: 'large' }, insert: '民族' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { attributes: { size: 'large' }, insert: '年龄' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '身份证号码' },
-                { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                { attributes: { size: 'large' }, insert: '联系方式' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '单位或住址' },
-                { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                { insert: '\n' },
-                // 当事人信息
-                { attributes: { size: 'large' }, insert: '当事人姓名' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
-                { attributes: { size: 'large' }, insert: '性别' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
-                { attributes: { size: 'large' }, insert: '民族' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { attributes: { size: 'large' }, insert: '年龄' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '身份证号码' },
-                { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                { attributes: { size: 'large' }, insert: '联系方式' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '单位或住址' },
-                { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                { insert: '\n' },
-                // 纠纷简要情况
-                { attributes: { size: 'large' }, insert: '主要事实：' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${mainFacts} ` },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '经调解，双方自愿达成如下协议：' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${iationAgreement} ` },
-                { insert: '\n' },
-                // { attributes: { underline: true, size: 'large' }, insert: `${responseValue}` },
-                // { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '履行方式、时限' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { attributes: { size: 'large' }, insert: '本协议一式' },
-                { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                { attributes: { size: 'large' }, insert: '份，当事人、人民调解委员会各持一份。' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '当事人（签名盖章或按指印）:_______________' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '当事人（签名盖章或按指印）:_______________ ' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: '人民调解员（签名）_______________ ' },
-                { attributes: { size: 'large' }, insert: '记录人（签名） _______________ ' },
-                { insert: '\n' },
-                { attributes: { size: 'large' }, insert: ' (人员调节委员会印章) ' },
-                { attributes: { align: 'right' }, insert: '\n' },
-                { attributes: { underline: true, size: 'large' }, insert: ` ${valuedate} ` },
-                { attributes: { align: 'right' }, insert: '\n' },
-            ];
+            console.log('this.store.dialogTableVisibleIndex', this.store.state.dialogTableVisibleIndex);
+            if (this.store.state.dialogTableVisibleIndex === 1) {
+                return [
+                    { attributes: { bold: true, size: 'huge' }, insert: '人民调解协议书' },
+                    { attributes: { align: 'center' }, insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '编号_______字 [    ] _______号 ' },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    // 当事人信息
+                    { attributes: { size: 'large' }, insert: '当事人姓名' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
+                    { attributes: { size: 'large' }, insert: '性别' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
+                    { attributes: { size: 'large' }, insert: '民族' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { attributes: { size: 'large' }, insert: '年龄' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '身份证号码' },
+                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
+                    { attributes: { size: 'large' }, insert: '联系方式' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '单位或住址' },
+                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
+                    { insert: '\n' },
+                    // 当事人信息
+                    { attributes: { size: 'large' }, insert: '当事人姓名' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
+                    { attributes: { size: 'large' }, insert: '性别' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
+                    { attributes: { size: 'large' }, insert: '民族' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { attributes: { size: 'large' }, insert: '年龄' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '身份证号码' },
+                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
+                    { attributes: { size: 'large' }, insert: '联系方式' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '单位或住址' },
+                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
+                    { insert: '\n' },
+                    // 纠纷简要情况
+                    { attributes: { size: 'large' }, insert: '主要事实：' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${mainFacts} ` },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '经调解，双方自愿达成如下协议：' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${iationAgreement} ` },
+                    { insert: '\n' },
+                    // { attributes: { underline: true, size: 'large' }, insert: `${responseValue}` },
+                    // { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '履行方式、时限' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { attributes: { size: 'large' }, insert: '本协议一式' },
+                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                    { attributes: { size: 'large' }, insert: '份，当事人、人民调解委员会各持一份。' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '当事人（签名盖章或按指印）:_______________' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '当事人（签名盖章或按指印）:_______________ ' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '人民调解员（签名）_______________ ' },
+                    { attributes: { size: 'large' }, insert: '记录人（签名） _______________ ' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: ' (人员调节委员会印章) ' },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${valuedate} ` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                ];
+            }
+            if (this.store.state.dialogTableVisibleIndex === 0) {
+                return [
+                    { attributes: { bold: true, size: 'huge' }, insert: '治安调解协议书' },
+                    { attributes: { align: 'center' }, insert: '\n' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '（       ）调解字（    ）_______号' },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '主持人姓名:' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${personname} ` },
+                    { attributes: { size: 'large' }, insert: '工作单位:' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${locationname} ` },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '调解地点：' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${locationname} ` },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '当事人基本情况：' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: `${partyList.join('\n')}` },
+                    { insert: '\n' },
+                    { attributes: { underline: true, size: 'large' }, insert: `${responseValue}` },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '本协议自双方签字之时起生效。' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '本协议书一式三份，双方当事人各执一份，调解机关留存一份。' },
+                    { insert: '\n' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '主持人:_______________' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: `${valuedate}` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '见证人:_______________ ' },
+                    { insert: '\n' },
+                    { attributes: { align: 'right', size: 'large' }, insert: `${valuedate}` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '当事人:_______________ ' },
+                    { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: `${valuedate}` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { insert: '\n' },
+                    { insert: '\n' },
+                    { attributes: { underline: true, size: 'large' }, insert: `  ${locationname}  ` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { attributes: { underline: true, size: 'large' }, insert: `  ${valuedate}  ` },
+                    { attributes: { align: 'right' }, insert: '\n' },
+                    { insert: '\n' },
+                ];
+            }
+            return [];
         },
     },
 };

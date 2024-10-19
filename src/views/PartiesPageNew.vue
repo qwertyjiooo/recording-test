@@ -119,6 +119,14 @@
     </el-dialog>
     <UserInfoComponent ref="userInfoComponent" @updateUserlist="updateUserInfolist" />
     <UpNewRecord ref="upNewRecordComponent" @upNewRecordInfo="upNewRecordInfo" />
+    <el-dialog v-model="dialogTableVisible" show-close="false" title="请选择文档" width="30%">
+        <div class="dialog-content">
+            <div class="dialog-content-item" v-for="(item, index) in dialogList" :key="index">
+                <div class="dialog-content-item-title">{{ item.name }}</div>
+                <el-button @click="handleDialogClick(index,item.path)">确定</el-button>
+            </div>
+        </div>
+    </el-dialog>
 </template>
 <script>
 import { quillEditor } from 'vue-quill-editor/src';
@@ -132,6 +140,7 @@ import Recorder from 'js-audio-recorder';
 import { useRouter } from 'vue-router';
 import { inject, onMounted } from 'vue';
 import { saveAs } from 'file-saver';
+import { useStore } from 'vuex'; // 导入 useStore
 
 import UserInfoComponent from '../components/UserInfoComponent.vue';
 import UpNewRecord from '../components/UpNewRecord.vue';
@@ -147,6 +156,7 @@ export default {
         const zhanshigaoduRef = inject('zhanshigaodu');
         const itemList = inject('itemList');
         const chatDialog = inject('chatDialog');
+        const store = useStore();
         function updateItemList(newValue) {
             itemList.value = newValue;
         }
@@ -159,6 +169,7 @@ export default {
             router,
             chatDialog,
             updateItemList,
+            store,
         };
     },
 
@@ -214,6 +225,8 @@ export default {
             // 说话人列表
             speakerTagList: [],
             recorder: null,
+            dialogTableVisible: false,
+            dialogList: [],
         };
     },
     mounted() {
@@ -974,14 +987,30 @@ export default {
                     tempitems[0].select = true;
                     tempitems.forEach((element) => {
                         itemList.push(element);
+                        this.dialogList.push(element);
                     });
                     console.log('tempitems11111111111', tempitems);
                     this.updateItemList(itemList);
-                    this.router.push(tempitems[0].path);
+                    this.dialogTableVisible = true;
+                    // this.router.push(tempitems[0].path);
                 }
             }).catch((error) => {
                 console.error('根据记录ID获取所有文书失败:', error);
             });
+        },
+        // 选择跳转的文档
+        handleDialogClick(index, path) {
+            this.store.commit('setCurrentIndex', index);
+            this.dialogTableVisible = false;
+            // 此时的index === 3 是用于判断 是否是调解协议文档类型
+            if (index === 3) {
+                this.CurrentDialogTableVisibleIndex = true;
+                this.store.commit('setCurrentDialogTableVisibleIndex');
+                // this.dialogTableVisibleIndexRouter = path;
+                this.router.push(path);
+            } else {
+                this.router.push(path);
+            }
         },
         processDictToArray(response) {
             const tempitems = [];
@@ -1041,5 +1070,17 @@ export default {
 .my-custom-loading .circular {
     /*隐藏 默认的 loading 动画*/
     display: none;
+}
+
+.dialog-content-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+}
+
+.dialog-content-item-title{
+    font-size: 16px;
+    font-weight: bold;
 }
 </style>
