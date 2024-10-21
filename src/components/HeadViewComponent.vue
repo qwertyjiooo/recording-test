@@ -50,6 +50,7 @@ export default defineComponent({
             }
         });
         onMounted(() => {
+            console.log('currentIndex', localStorage.getItem('currentIndex'));
             if (listContentDiv.value) {
                 resizeObserver.observe(listContentDiv.value);
             }
@@ -96,6 +97,7 @@ export default defineComponent({
         function handleClick(value: string) {
             currentIndex.value = value;
             if (value === '0') {
+                localStorage.setItem('currentIndex', '0');
                 router.push({
                     path: '/',
                     query: {
@@ -103,6 +105,7 @@ export default defineComponent({
                     },
                 });
             } else if (value === '1') {
+                localStorage.setItem('currentIndex', '1');
                 if (itemList) {
                     itemList.value = [];
                 }

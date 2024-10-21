@@ -106,9 +106,11 @@ export default ({
   },
   mounted() {
     const record = JSON.parse(localStorage.getItem('record'));
+    const recordId = localStorage.getItem('recordId');
     this.personName = record.personName;
     this.Form = record.titleVoList;
     console.log('Form', this.Form);
+    this.getAllBookListByRecordId(recordId);
   },
   methods: {
     bianji(index, row) {
@@ -367,16 +369,17 @@ export default ({
       }
     },
     // 根据记录ID获取所有文书
-    getAllBookListByRecordId(recordIdStr) {
+    getAllBookListByRecordId(recordIds) {
       axiosInstance.get('/api/getAllBookListByRecordId', {
         params: {
-          recordId: recordIdStr,
+          recordId: recordIds,
         },
       }).then((response) => {
         if (response.data.status === 'SUCCESS') {
-          this.personName = response.data.data.personName;
-          this.Form = response.data.data.titleVoList;
+          // this.personName = response.data.data.personName;
+          // this.Form = response.data.data.titleVoList;
           // 人民调解案卷案件卷内目录
+          console.log('response.data.data', response.data.data);
         }
       }).catch((error) => {
         console.error('根据记录ID获取所有文书失败:', error);

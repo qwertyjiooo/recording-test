@@ -136,16 +136,16 @@ export default {
                     }
                 });
                 templist[item.title] = neriongtemp;
-                console.log('点击生成文档', neriongtemp);
             });
+            console.log('点击生成文档', templist);
             const contentStr = JSON.stringify(templist);
-            const loadingInstance = ElLoading.service(
-                {
-                    customClass: 'my-custom-loading',
-                    text: '正在生成文档，请稍等...',
-                    background: 'rgba(0, 0, 0, 0.7)',
-                },
-            );
+            // const loadingInstance = ElLoading.service(
+            //     {
+            //         customClass: 'my-custom-loading',
+            //         text: '正在生成文档，请稍等...',
+            //         background: 'rgba(0, 0, 0, 0.7)',
+            //     },
+            // );
             const url = 'http://58.246.144.58:8888/hui';
             const headers = {
                 Accept: 'application/json',
@@ -155,19 +155,20 @@ export default {
             const data = {
                 input: templist,
             };
-            try {
-                const response = await axios.post(url, data, { headers });
-                console.log('请求成功:', response.data);
-                const result = response.data;
+            // try {
+                // const response = await axios.post(url, data, { headers });
+                // console.log('请求成功:', response.data);
+                // const result = response.data;
                 this.tiquneironglist = [];
-                const keys = Object.keys(result.result);
+                // const keys = Object.keys(result.result);
+                const keys = Object.keys(templist);
                 if (this.documentList.length <= 0) {
                     const tempneironglist = [];
                     keys.forEach((key) => {
-                        const temp = this.gettiquneironglistString(result.result[key]);
+                        // const temp = this.gettiquneironglistString(result.result[key]);
                         this.huifangdocumentList.forEach((item) => {
                             if (item.title === key) {
-                                const tempneirong = this.setmobanneirong(temp, item.items);
+                                const tempneirong = this.setmobanneirong('temp', item.items);
                                 const neirong = {
                                     name: item.title,
                                     content: tempneirong,
@@ -176,6 +177,7 @@ export default {
                             }
                         });
                     });
+                    console.log('keys', keys);
                     const tempobj = {
                         name: '版本1',
                         num: 1,
@@ -200,10 +202,10 @@ export default {
                     const numStr = document.num + 1;
                     const tempneironglist = [];
                     keys.forEach((key) => {
-                        const temp = this.gettiquneironglistString(result.result[key]);
+                        // const temp = this.gettiquneironglistString(result.result[key]);
                         this.huifangdocumentList.forEach((item) => {
                             if (item.title === key) {
-                                const tempneirong = this.setmobanneirong(temp, item.items);
+                                const tempneirong = this.setmobanneirong('temp', item.items);
                                 const neirong = {
                                     name: item.title,
                                     content: tempneirong,
@@ -212,6 +214,7 @@ export default {
                             }
                         });
                     });
+                    console.log('keys', keys);
                     const tempobj = {
                         name: `版本${numStr}`,
                         num: numStr,
@@ -232,11 +235,11 @@ export default {
                     });
                 }
                 console.log('documentList:', this.documentList);
-                loadingInstance.close();
-            } catch (error) {
-                loadingInstance.close();
-                console.error('请求失败:', error);
-            }
+                // loadingInstance.close();
+            // } catch (error) {
+            //     loadingInstance.close();
+            //     console.error('请求失败:', error);
+            // }
         },
         // 提取**内容
         gettiquneironglistString(originalString) {

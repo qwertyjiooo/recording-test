@@ -1,153 +1,166 @@
 <template>
     <div>
-        <!-- 右下角的按钮 -->
-        <el-button class="chat-button" @click="toggleChat">
-        </el-button>
-        <!-- 聊天对话框 -->
-        <div id="showLoadingByL" v-if="isChatOpen" class="chat-dialog">
-            <div class="guanbi">
-                <div
-                    style="margin-left: 10px;flex: 1;display: flex;align-items:center;font-size: 20px;font-weight: 600;">
-                    法言法语</div>
-                <el-button @click="guanbi" type="primary">关闭</el-button>
-            </div>
-            <div class="chat-messages" ref="chatMessages">
-                <div v-for="(message, index) in messages" :key="index">
-                    <div @click="toggleDisplay(message)" class="user-message">
-                        <!-- 搜索标签 -->
-                        <el-tag>{{ message.titleStr }}</el-tag>
-                        <!-- 点击展开 -->
-                        <span class="expand-button" v-if="!message.isExpanded && message.contentText.length > 5">(点击展开)</span>
-                        <span class="expand-button" v-if="message.isExpanded" >(点击关闭)</span>
-                    </div>
-                    <div style="text-align: left;" v-html="compiledMarkdown(message)"></div>
-                </div>
-            </div>
-            <div class="chat-input">
-                <el-input v-model="userInput" @keyup.enter="sendMessage" placeholder="请输入您要查询的内容" />
-                <el-button type="primary" @click="sendMessage">发送</el-button>
-            </div>
+      <el-button class="chat-button" @click="toggleChat"></el-button>
+      <div id="showLoadingByL" v-show="isChatOpen" class="chat-dialog">
+        <div class="guanbi">
+            <div
+                style="margin-left: 10px;flex: 1;display: flex;align-items:center;font-size: 20px;font-weight: 600;">
+                法言法语</div>
+          <el-button @click="guanbi" type="primary">关闭</el-button>
         </div>
+        <div class="chat-messages" ref="chatMessages">
+          <div v-for="(message, index) in messages" :key="index">
+            <div @click="toggleDisplay(message)" class="user-message">
+                <el-tag>{{ message.titleStr }}</el-tag>
+                <span class="expand-button" v-if="!message.isExpanded && message.contentText.length > 5">(展开)</span>
+            </div>
+            <div style="text-align: left;" v-html="compiledMarkdown(message)"></div>
+            <span @click="toggleDisplay(message)" class="expand-button" v-if="message.isExpanded" >(收起)</span>
+        </div>
+        </div>
+        <div class="chat-input">
+            <el-input v-model="userInput" @keyup.enter="sendMessage" placeholder="请输入您要查询的内容" />
+            <el-button type="primary" @click="sendMessage">发送</el-button>
+        </div>
+      </div>
     </div>
 </template>
 
 <script>
-import axios from 'axios';
 import { ElLoading } from 'element-plus';
 import MarkdownIt from 'markdown-it';
 
 export default {
-    data() {
-        return {
-            isChatOpen: false,
-            userInput: '',
-            messages: [],
+  data() {
+    return {
+      isChatOpen: false,
+      userInput: '',
+      messages: [],
+    };
+  },
+  methods: {
+    guanbi() {
+      this.isChatOpen = false;
+    },
+    showsendMessage(userInput) {
+        this.isChatOpen = true;
+        this.messages.push({
+            titleStr: userInput,
+            contentText: '',
+            contentOmissionText: '',
+            isExpanded: true,
+        });
+        // 滚动到最底部
+        this.scrollToBottom();
+        // 模拟调用接口并添加返回的消息到消息列表
+        this.$nextTick(() => {
+            this.mockApiResponse(userInput);
+        });
+    },
+    compiledMarkdown(message) {
+        const md = new MarkdownIt();
+        let text = '';
+        if (message.isExpanded) {
+            text = message.contentText;
+        } else {
+            text = message.contentOmissionText;
+        }
+        return md.render(text);
+    },
+    sendMessage() {
+        if (this.userInput.trim() === '') return;
+        // 添加用户消息到消息列表
+        this.messages.push({
+            titleStr: this.userInput,
+            contentText: '',
+            contentOmissionText: '',
+            isExpanded: false,
+        });
+        // 滚动到最底部
+        this.scrollToBottom();
+        // 模拟调用接口并添加返回的消息到消息列表
+        this.mockApiResponse(this.userInput);
+    },
+    toggleChat() {
+      this.isChatOpen = !this.isChatOpen;
+      this.$nextTick(() => {
+        if (this.isChatOpen) {
+          this.scrollToBottom();
+        }
+      });
+    },
+    async mockApiResponse(contentStr) {
+      const loadingInstance = ElLoading.service({
+        customClass: 'custom-loading',
+        target: '#showLoadingByL',
+        text: '正在查找，请稍等...',
+        background: 'rgba(0, 0, 0, 0.7)',
+      });
+
+      const url = 'http://58.246.144.58:8888/chat_stream';
+      const headers = {
+        Accept: 'text/plain',
+        Authorization: 'Bearer MxwaXdn3jBBigtJniaasCRTrJpe73TWF',
+        'Content-Type': 'application/json',
+      };
+      const data = { input: contentStr };
+      this.userInput = '';
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(data),
+        });
+
+        if (!response.body) {
+          throw new Error('ReadableStream not supported in this browser.');
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        let resultText = '';
+        let done;
+        let firstChunkReceived = false; // 标记是否接收到第一个数据块
+
+        const readStream = async () => {
+          const { done: isDone, value } = await reader.read();
+          done = isDone;
+          if (value) {
+            if (!firstChunkReceived) {
+              loadingInstance.close(); // 关闭加载动画
+              firstChunkReceived = true;
+            }
+            resultText += decoder.decode(value, { stream: true });
+            this.messages[this.messages.length - 1].contentText = resultText;
+            this.scrollToBottom();
+          }
+          if (!done) {
+            await readStream(); // 继续读取
+          }
         };
+
+        await readStream(); // 启动流读取
+
+        const lastMessage = this.messages[this.messages.length - 1];
+        lastMessage.contentOmissionText = resultText.length <= 20 ? resultText : `${resultText.substring(0, 20)}......`;
+        // 此处注释是为了不让请求之后立即关闭展开
+        // lastMessage.isExpanded = false;
+      } catch (error) {
+        loadingInstance.close();
+        console.error('请求失败:', error);
+      }
     },
-    methods: {
-        guanbi() {
-            this.isChatOpen = false;
-        },
-        showsendMessage(userInput) {
-            this.isChatOpen = true;
-            this.messages.push({
-                titleStr: userInput,
-                contentText: '',
-                contentOmissionText: '',
-                isExpanded: false,
-            });
-            // 滚动到最底部
-            this.scrollToBottom();
-            // 模拟调用接口并添加返回的消息到消息列表
-            this.$nextTick(() => {
-                this.mockApiResponse(userInput);
-            });
-        },
-        compiledMarkdown(message) {
-            const md = new MarkdownIt();
-            let text = '';
-            if (message.isExpanded) {
-                text = message.contentText;
-            } else {
-                text = message.contentOmissionText;
-            }
-            return md.render(text);
-        },
-        toggleChat() {
-            this.isChatOpen = !this.isChatOpen;
-            // 当打开聊天框时，滚动到最底部
-            this.$nextTick(() => {
-                if (this.isChatOpen) {
-                    this.scrollToBottom();
-                }
-            });
-        },
-        sendMessage() {
-            if (this.userInput.trim() === '') return;
-            // 添加用户消息到消息列表
-            this.messages.push({
-                titleStr: this.userInput,
-                contentText: '',
-                contentOmissionText: '',
-                isExpanded: false,
-            });
-            // 滚动到最底部
-            this.scrollToBottom();
-            // 模拟调用接口并添加返回的消息到消息列表
-            this.mockApiResponse(this.userInput);
-        },
-        async mockApiResponse(contentStr) {
-            const loadingInstance = ElLoading.service(
-                {
-                    customClass: 'custom-loading',
-                    target: '#showLoadingByL',
-                    text: '正在查找，请稍等...',
-                    background: 'rgba(0, 0, 0, 0.3)',
-                },
-            );
-            // 这里你应该调用实际的API，并使用返回的数据
-            const url = 'http://58.246.144.58:8888/chat';
-            const headers = {
-                Accept: 'application/json',
-                Authorization: 'Bearer MxwaXdn3jBBigtJniaasCRTrJpe73TWF',
-                'Content-Type': 'application/json',
-            };
-            const data = {
-                input: contentStr,
-            };
-            // 清空输入框
-            this.userInput = '';
-            try {
-                const response = await axios.post(url, data, { headers });
-                console.log('请求成功:', response.data);
-                const messagetext = response.data.result;
-                const tempmessages = this.messages[this.messages.length - 1];
-                tempmessages.contentText = messagetext;
-                let text = '';
-                if (messagetext.length <= 20) {
-                    text = messagetext;
-                } else {
-                    text = `${messagetext.substring(0, 20)}......`;
-                }
-                tempmessages.contentOmissionText = text;
-                tempmessages.isExpanded = false;
-                // 滚动到最底部
-                this.scrollToBottom();
-                loadingInstance.close();
-            } catch (error) {
-                loadingInstance.close();
-                console.error('请求失败:', error);
-            }
-        },
-        toggleDisplay(message) {
-            message.isExpanded = !message.isExpanded;
-        },
-        scrollToBottom() {
-            this.$nextTick(() => {
-                this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight;
-            });
-        },
+    toggleDisplay(message) {
+      message.isExpanded = !message.isExpanded;
     },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight;
+      });
+    },
+  },
 };
 </script>
 
@@ -201,7 +214,7 @@ export default {
     border-radius: 5px;
     margin: 5px; */
 }
-.chat-messages .user-message .expand-button{
+.expand-button{
     color: #999999;
     text-decoration:none;
     cursor: pointer;

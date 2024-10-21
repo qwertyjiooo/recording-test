@@ -119,7 +119,7 @@
     </el-dialog>
     <UserInfoComponent ref="userInfoComponent" @updateUserlist="updateUserInfolist" />
     <UpNewRecord ref="upNewRecordComponent" @upNewRecordInfo="upNewRecordInfo" />
-    <el-dialog v-model="dialogTableVisible" show-close="false" title="请选择文档" width="30%">
+    <el-dialog v-model="dialogTableVisible" show-close="false" title="请选择对应文档" width="30%">
         <div class="dialog-content">
             <div class="dialog-content-item" v-for="(item, index) in dialogList" :key="index">
                 <div class="dialog-content-item-title">{{ item.name }}</div>
@@ -290,6 +290,7 @@ export default {
         },
         // 保存当前文档，填写当事方信息
         selsectbaocun() {
+            console.log('tiquneironglist', this.tiquneironglist);
             const userinfo = this.userlist[this.selectedUsetnum];
             const document = userinfo.documentList[this.selectedActivenum];
             const tempquillref = `s${userinfo.speaknum}${document.num}`;
@@ -941,7 +942,7 @@ export default {
                 }
             }
         },
-        // 语音识别
+        // 语音识别 讯飞语音识别
         connectWebSocket() {
             const appID = 'ebe3e2be';
             const APIKey = '44ed5faab8c8747c062e4d028e87d003';
@@ -987,8 +988,12 @@ export default {
                     tempitems[0].select = true;
                     tempitems.forEach((element) => {
                         itemList.push(element);
-                        this.dialogList.push(element);
+                        if (element.name !== '打印预览') {
+                            this.dialogList.push(element);
+                        }
                     });
+                    // 删除dialogList中的打印预览
+
                     console.log('tempitems11111111111', tempitems);
                     this.updateItemList(itemList);
                     this.dialogTableVisible = true;
@@ -1071,7 +1076,10 @@ export default {
     /*隐藏 默认的 loading 动画*/
     display: none;
 }
-
+.el-dialog__header{
+    border-bottom: 1px solid #3333;
+    margin-bottom: 10px;
+}
 .dialog-content-item{
     display: flex;
     align-items: center;

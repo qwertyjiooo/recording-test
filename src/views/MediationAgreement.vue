@@ -41,7 +41,7 @@
             </el-tabs>
         </el-card>
     </div>
-    <el-dialog v-model="dialogTableVisibleIndex" show-close="false" title="请选择文档" width="30%">
+    <el-dialog v-model="dialogTableVisibleIndex" show-close="false" title="请选择文档类型" width="30%">
         <div class="dialog-content">
             <div class="dialog-content-item" v-for="(item, index) in dialogListIndex" :key="index">
                 <div class="dialog-content-item-title">{{ item.name }}</div>
@@ -129,7 +129,9 @@ export default {
         // 选择调解协议文档类型
         handleDialogClickIndex(index) {
             // 此处只是试用 store
-            this.store.commit('setDialogTableVisibleIndex', index);
+            // this.store.commit('setDialogTableVisibleIndex', index);
+            // 将setDialogTableVisibleIndex 存入本地
+            localStorage.setItem('dialogTableVisibleIndex', index);
             // this.store.commit('setCurrentDialogTableVisibleIndex');
             // this.dialogTableVisibleIndex = this.store.state.CurrentDialogTableVisibleIndex;
             // this.initData();
@@ -174,6 +176,7 @@ export default {
                 const result = response.data;
                 this.tiquneironglist = [];
                 const keys = Object.keys(result.result);
+                console.log('keys', this.duihualist);
                 if (this.documentList.length <= 0) {
                     const mainFacts = ` ${this.gettiquneironglistString(result.result['主要事实'])}\n `;
                     const mediationAgreement = ` ${this.gettiquneironglistString(result.result['调解协议'])}\n `;
@@ -361,6 +364,7 @@ export default {
             let partyListName = '';
             let partyListGender = '';
             let partyListType = '';
+            const getPartyRet = [];
             this.partyVoList.forEach((item) => {
                 item.partyPersonVoList.forEach((item2) => {
                     const genderChar = item2.type.charAt(16);
@@ -377,53 +381,41 @@ export default {
                     partyListName = item2.name;
                     partyListGender = gender;
                     partyListType = item2.type;
+                    const partyRet = [
+                        // 当事人信息
+                        { attributes: { size: 'large' }, insert: '当事人姓名' },
+                        { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
+                        { attributes: { size: 'large' }, insert: '性别' },
+                        { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
+                        { attributes: { size: 'large' }, insert: '民族' },
+                        { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                        { attributes: { size: 'large' }, insert: '年龄' },
+                        { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                        { insert: '\n' },
+                        { attributes: { size: 'large' }, insert: '身份证号码' },
+                        { attributes: { underline: true, size: 'large' }, insert: ` ${partyListType} ` },
+                        { attributes: { size: 'large' }, insert: '联系方式' },
+                        { attributes: { underline: true, size: 'large' }, insert: '_______' },
+                        { insert: '\n' },
+                        { attributes: { size: 'large' }, insert: '单位或住址' },
+                        { attributes: { underline: true, size: 'large' }, insert: '______________' },
+                        { insert: '\n' },
+                    ];
+                    getPartyRet.push(...partyRet);
+                    // console.log('partyList', partyRet);
                 });
             });
+            console.log('partyList', getPartyRet);
             const locationname = this.response.locationName;
             const personname = this.response.personName;
-            console.log('this.store.dialogTableVisibleIndex', this.store.state.dialogTableVisibleIndex);
-            if (this.store.state.dialogTableVisibleIndex === 1) {
+            // console.log('this.store.dialogTableVisibleIndex', this.store.state.dialogTableVisibleIndex);
+            if (localStorage.getItem('dialogTableVisibleIndex') === '1') {
                 return [
                     { attributes: { bold: true, size: 'huge' }, insert: '人民调解协议书' },
                     { attributes: { align: 'center' }, insert: '\n' },
                     { attributes: { size: 'large' }, insert: '编号_______字 [    ] _______号 ' },
                     { attributes: { align: 'right' }, insert: '\n' },
-                    // 当事人信息
-                    { attributes: { size: 'large' }, insert: '当事人姓名' },
-                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
-                    { attributes: { size: 'large' }, insert: '性别' },
-                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
-                    { attributes: { size: 'large' }, insert: '民族' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { attributes: { size: 'large' }, insert: '年龄' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: '身份证号码' },
-                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                    { attributes: { size: 'large' }, insert: '联系方式' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: '单位或住址' },
-                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                    { insert: '\n' },
-                    // 当事人信息
-                    { attributes: { size: 'large' }, insert: '当事人姓名' },
-                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListName} ` },
-                    { attributes: { size: 'large' }, insert: '性别' },
-                    { attributes: { underline: true, size: 'large' }, insert: ` ${partyListGender} ` },
-                    { attributes: { size: 'large' }, insert: '民族' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { attributes: { size: 'large' }, insert: '年龄' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: '身份证号码' },
-                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                    { attributes: { size: 'large' }, insert: '联系方式' },
-                    { attributes: { underline: true, size: 'large' }, insert: '_______' },
-                    { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: '单位或住址' },
-                    { attributes: { underline: true, size: 'large' }, insert: '______________' },
-                    { insert: '\n' },
+                    ...getPartyRet,
                     // 纠纷简要情况
                     { attributes: { size: 'large' }, insert: '主要事实：' },
                     { attributes: { underline: true, size: 'large' }, insert: ` ${mainFacts} ` },
@@ -452,14 +444,14 @@ export default {
                     { attributes: { align: 'right' }, insert: '\n' },
                 ];
             }
-            if (this.store.state.dialogTableVisibleIndex === 0) {
+            if (localStorage.getItem('dialogTableVisibleIndex') === '0') {
                 return [
                     { attributes: { bold: true, size: 'huge' }, insert: '治安调解协议书' },
                     { attributes: { align: 'center' }, insert: '\n' },
-                    { insert: '\n' },
+                    // { insert: '\n' },
                     { attributes: { size: 'large' }, insert: '（       ）调解字（    ）_______号' },
                     { attributes: { align: 'right' }, insert: '\n' },
-                    { insert: '\n' },
+                    // { insert: '\n' },
                     { attributes: { size: 'large' }, insert: '主持人姓名:' },
                     { attributes: { underline: true, size: 'large' }, insert: ` ${personname} ` },
                     { attributes: { size: 'large' }, insert: '工作单位:' },
@@ -472,8 +464,15 @@ export default {
                     { insert: '\n' },
                     { attributes: { size: 'large' }, insert: `${partyList.join('\n')}` },
                     { insert: '\n' },
-                    { attributes: { underline: true, size: 'large' }, insert: `${responseValue}` },
+                    // { attributes: { underline: true, size: 'large' }, insert: `${responseValue}` },
+                    // 纠纷简要情况
+                    { attributes: { size: 'large' }, insert: '主要事实：' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${mainFacts} ` },
                     { insert: '\n' },
+                    { attributes: { size: 'large' }, insert: '经调解，双方自愿达成如下协议：' },
+                    { attributes: { underline: true, size: 'large' }, insert: ` ${iationAgreement} ` },
+                    { insert: '\n' },
+                    // { insert: '\n' },
                     { attributes: { size: 'large' }, insert: '本协议自双方签字之时起生效。' },
                     { insert: '\n' },
                     { attributes: { size: 'large' }, insert: '本协议书一式三份，双方当事人各执一份，调解机关留存一份。' },
@@ -481,23 +480,23 @@ export default {
                     { insert: '\n' },
                     { attributes: { size: 'large' }, insert: '主持人:_______________' },
                     { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: `${valuedate}` },
-                    { attributes: { align: 'right' }, insert: '\n' },
+                    // { attributes: { size: 'large' }, insert: `${valuedate}` },
+                    // { attributes: { align: 'right' }, insert: '\n' },
                     { attributes: { size: 'large' }, insert: '见证人:_______________ ' },
                     { insert: '\n' },
-                    { attributes: { align: 'right', size: 'large' }, insert: `${valuedate}` },
-                    { attributes: { align: 'right' }, insert: '\n' },
+                    // { attributes: { align: 'right', size: 'large' }, insert: `${valuedate}` },
+                    // { attributes: { align: 'right' }, insert: '\n' },
                     { attributes: { size: 'large' }, insert: '当事人:_______________ ' },
                     { insert: '\n' },
-                    { attributes: { size: 'large' }, insert: `${valuedate}` },
-                    { attributes: { align: 'right' }, insert: '\n' },
-                    { insert: '\n' },
-                    { insert: '\n' },
+                    // { attributes: { size: 'large' }, insert: `${valuedate}` },
+                    // { attributes: { align: 'right' }, insert: '\n' },
+                    // { insert: '\n' },
+                    // { insert: '\n' },
                     { attributes: { underline: true, size: 'large' }, insert: `  ${locationname}  ` },
                     { attributes: { align: 'right' }, insert: '\n' },
                     { attributes: { underline: true, size: 'large' }, insert: `  ${valuedate}  ` },
                     { attributes: { align: 'right' }, insert: '\n' },
-                    { insert: '\n' },
+                    // { insert: '\n' },
                 ];
             }
             return [];
@@ -507,7 +506,6 @@ export default {
 </script>
 <style>
 /* 在这里添加CSS样式 */
-
 .my-custom-loading {
     background-image: url('../assets/loading.gif');
     background-repeat: no-repeat;

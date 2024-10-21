@@ -189,7 +189,8 @@ export default {
                   return item;
                 });
                 this.updateItemList(newItems);
-                this.router.push(pathStr);
+                // 此处注释是避免选择调查记录的时候，跳转到回访记录
+                // this.router.push(pathStr);
               }
             }
           });
