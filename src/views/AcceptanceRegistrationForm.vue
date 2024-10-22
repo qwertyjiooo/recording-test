@@ -166,7 +166,6 @@ export default {
                             console.log('quill', tempquill);
                             tempquill.quill.setContents(tempobj.content, 'user');
                             this.baocun();
-                            this.initData();
                         });
                     });
                     this.selectedActivenum = 0;
