@@ -651,29 +651,46 @@ export default {
         },
         // 获取笔录人员列表
         getPersonList() {
-            axiosInstance.get('/api/getPersonList').then((response) => {
-                if (response.data.status === 'SUCCESS') {
-                    this.personList = response.data.data;
-                    if (this.personList.length > 0) {
+            // axiosInstance.get('/api/getPersonList').then((response) => {
+            //     if (response.data.status === 'SUCCESS') {
+            //         this.personList = response.data.data;
+            //         if (this.personList.length > 0) {
+            //             this.selectedPerson = this.personList[0].id;
+            //         }
+            //     }
+            //     console.log('11111111111111111', this.personList, this.selectedPerson);
+            // }).catch((error) => {
+            //     console.error('获取笔录人员列表失败:', error);
+            // });
+            const response = [
+                { id: 1, name: '巩培飞' },
+                { id: 2, name: '高美兰' },
+                { id: 3, name: '吴哲' },
+            ];
+            this.personList = response;
+            if (this.personList.length > 0) {
                         this.selectedPerson = this.personList[0].id;
-                    }
-                }
-            }).catch((error) => {
-                console.error('获取笔录人员列表失败:', error);
-            });
+            }
         },
         // 获取笔录地点列表
         getLocationList() {
-            axiosInstance.get('/api/getLocationList').then((response) => {
-                if (response.data.status === 'SUCCESS') {
-                    this.locationList = response.data.data;
-                    if (this.locationList.length > 0) {
-                        this.selectedLocation = this.locationList[0].id;
-                    }
-                }
-            }).catch((error) => {
-                console.error('获取笔录地点列表失败:', error);
-            });
+            // axiosInstance.get('/api/getLocationList').then((response) => {
+            //     if (response.data.status === 'SUCCESS') {
+            //         this.locationList = response.data.data;
+            //         if (this.locationList.length > 0) {
+            //             this.selectedLocation = this.locationList[0].id;
+            //         }
+            //     }
+            // }).catch((error) => {
+            //     console.error('获取笔录地点列表失败:', error);
+            // });
+            const response = [
+                { id: 1, name: '南京市公安局鼓楼分局宁海路派出所' },
+            ];
+            this.locationList = response;
+            if (this.locationList.length > 0) {
+                this.selectedLocation = this.locationList[0].id;
+            }
         },
         // 点击生成文档
         async shengchengwendang() {

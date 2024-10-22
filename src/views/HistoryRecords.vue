@@ -89,6 +89,7 @@ export default ({
         page: currentPage4.value - 1,
         pageSize: pageSize4.value,
       };
+      console.log('请求参数:', requestBody);
       axiosInstance.post('/api/listRecord', requestBody).then((response: AxiosResponse<any, any>) => {
         if (response.data.status === 'SUCCESS') {
           tableData.value = response.data.data.list;

@@ -26,7 +26,7 @@
           <!-- <el-button class="AllPrint">打印全部</el-button> -->
         </div>
         <div class="CardContent">
-          <el-table :data="Form" stripe style="width: 100%;height: calc(100vh - 110px);">
+          <el-table v-loading="loading" :data="Form" stripe style="width: 100%;height: calc(100vh - 110px);">
             <el-table-column prop="title" label="笔录名称" />
             <el-table-column label="操作人">
               {{ personName }}
@@ -55,7 +55,7 @@ import axiosInstance from '@/api/axios';
 import { ElMessage } from 'element-plus';
 import { processDictToArray } from '@/utils/utils';
 import { useRouter } from 'vue-router';
-import { inject, onMounted } from 'vue';
+import { inject, onMounted, ref } from 'vue';
 
 export default ({
   components: {
@@ -65,6 +65,7 @@ export default ({
     const zhanshigaoduRef = inject('zhanshigaodu');
     const router = useRouter();
     const itemList = inject('itemList');
+    const loading = ref(true);
     function updateItemList(newValue) {
       itemList.value = newValue;
     }
@@ -75,6 +76,7 @@ export default ({
     });
     return {
       router,
+      loading,
       updateItemList,
     };
   },
@@ -105,11 +107,8 @@ export default ({
     };
   },
   mounted() {
-    const record = JSON.parse(localStorage.getItem('record'));
+    // const record = JSON.parse(localStorage.getItem('record'));
     const recordId = localStorage.getItem('recordId');
-    this.personName = record.personName;
-    this.Form = record.titleVoList;
-    console.log('Form', this.Form);
     this.getAllBookListByRecordId(recordId);
   },
   methods: {
@@ -376,9 +375,12 @@ export default ({
         },
       }).then((response) => {
         if (response.data.status === 'SUCCESS') {
-          // this.personName = response.data.data.personName;
-          // this.Form = response.data.data.titleVoList;
           // 人民调解案卷案件卷内目录
+          this.loading = false;
+          const record = response.data.data;
+          this.personName = record.personName;
+          this.Form = record.titleVoList;
+          console.log('Form', this.Form);
           console.log('response.data.data', response.data.data);
         }
       }).catch((error) => {
