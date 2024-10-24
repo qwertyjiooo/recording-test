@@ -74,6 +74,7 @@
 <script>
 import axiosInstance from '@/api/axios';
 import { ElLoading, ElMessage } from 'element-plus';
+import { resPeople, resPlace } from '../views/components/peoplePlace';
 
 export default {
     data() {
@@ -87,6 +88,8 @@ export default {
             selectedPerson: {},
             Form: {},
             textarea: '',
+            getResPeople: resPeople,
+            getResPlace: resPlace,
         };
     },
     methods: {
@@ -102,6 +105,7 @@ export default {
         quxiao() {
             this.isdangshifang = false;
         },
+        // 保存
         savedata() {
             if (this.input.length <= 0) {
                 ElMessage.error('请输入笔录标题');
@@ -177,6 +181,7 @@ export default {
             }).catch((error) => {
                 console.error('获取笔录人员列表失败:', error);
             });
+            // this.personList = this.getResPeople;
         },
         // 获取笔录地点列表
         getLocationList() {
@@ -190,6 +195,7 @@ export default {
             }).catch((error) => {
                 console.error('获取笔录地点列表失败:', error);
             });
+            // this.locationList = this.getResPlace;
         },
     },
 };

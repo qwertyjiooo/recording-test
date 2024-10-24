@@ -39,6 +39,7 @@ export default defineComponent({
         const currentIndex = ref('0');
         const neirongIndex = ref(0);
         const itemList: Ref<{ name: string; path: string; select: boolean; recordInfo: Record<string, unknown> }[]> = inject('itemList', ref([]));
+        const proOriginalItem: Ref<{index:number; name:string; path:string; type:number;}[]> = inject('proOriginalItem', ref([]));
         const itemListAll = ref([]);
         const listContentDiv = ref<HTMLElement | null>(null);
         const updateAppHeight = inject<{ update:(newHeight: number) => void }>('updateAppHeight');
@@ -88,6 +89,18 @@ export default defineComponent({
                 //     }
                 // });
             }
+            // 监听路由变化
+            // if (proOriginalItem) {
+            //     watch(proOriginalItem, (newValue) => {
+            //         console.log('proOriginalItem', newValue, proOriginalItem);
+            //         if (proOriginalItem.value.length > 0) {
+            //             proOriginalItem.value.forEach((res) => {
+            //                 router.push(res.path);
+            //             });
+            //         }
+            //     });
+            // }
+            // 获取当前路由的查询参数
             const queryIndex = router.currentRoute.value.query.currentIndex;
             console.log('queryIndex', queryIndex);
         });
@@ -134,6 +147,7 @@ export default defineComponent({
         }
         return {
             itemList,
+            proOriginalItem,
             itemListAll,
             neirongIndex,
             currentIndex,

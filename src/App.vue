@@ -37,10 +37,12 @@ export default {
     const chatDialogRef = ref<ComponentPublicInstance<typeof ChatDialog> | null>(null);
 
     const itemList = ref([]);
+    const proOriginalItem = ref([]);
     const divHeight = ref(50);
     const zhanshigaodu = ref(true);
     // 提供 itemList 及其更新函数
     provide('itemList', itemList);
+    provide('proOriginalItem', proOriginalItem);
     provide('chatDialog', chatDialogRef);
     provide('divHeight', divHeight);
     provide('zhanshigaodu', zhanshigaodu);
@@ -80,6 +82,7 @@ export default {
     });
     return {
       itemList,
+      proOriginalItem,
       chatDialog: chatDialogRef,
       divHeight,
       zhanshigaodu,

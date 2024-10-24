@@ -21,8 +21,7 @@
                 </div>
                 <div
                     style="width: 90%;padding: 10px; display: flex; flex-direction: column; white-space: normal; word-break: break-word;">
-                    {{
-                        shibiemessage }}</div>
+                    {{ shibiemessage }}</div>
             </div>
             <div v-if="!allstoped"
                 :style="{ position: shengchengwendangstoped ? 'static' : 'absolute', top: '20%', width: '85%', display: 'flex', justifyContent: 'center' }">
@@ -119,11 +118,17 @@
     </el-dialog>
     <UserInfoComponent ref="userInfoComponent" @updateUserlist="updateUserInfolist" />
     <UpNewRecord ref="upNewRecordComponent" @upNewRecordInfo="upNewRecordInfo" />
-    <el-dialog v-model="dialogTableVisible" show-close="false" title="请选择对应文档" width="30%">
+    <el-dialog close-on-click-modal="false" v-model="dialogTableVisible" show-close="false" title="请选择对应文档" width="30%">
         <div class="dialog-content">
-            <div class="dialog-content-item" v-for="(item, index) in dialogList" :key="index">
+            <el-checkbox @click="hClick(item, index)" v-for="(item, index) in dialogList" :key="index" :label="item.name" size="large" border />
+            <el-button type="primary" @click="handleDialogClick">确定</el-button>
+        </div>
+    </el-dialog>
+    <el-dialog v-model="dialogTableVisibleIndex" show-close="false" title="请选择文档类型" width="30%">
+        <div class="dialog-content">
+            <div class="dialog-content-item" v-for="(item, index) in dialogListIndex" :key="index">
                 <div class="dialog-content-item-title">{{ item.name }}</div>
-                <el-button @click="handleDialogClick(index,item.path)">确定</el-button>
+                <el-button @click="handleDialogClickIndex(index)">确定</el-button>
             </div>
         </div>
     </el-dialog>
@@ -141,6 +146,7 @@ import { useRouter } from 'vue-router';
 import { inject, onMounted } from 'vue';
 import { saveAs } from 'file-saver';
 import { useStore } from 'vuex'; // 导入 useStore
+import { resPeople, resPlace } from './components/peoplePlace';
 
 import UserInfoComponent from '../components/UserInfoComponent.vue';
 import UpNewRecord from '../components/UpNewRecord.vue';
@@ -227,6 +233,21 @@ export default {
             recorder: null,
             dialogTableVisible: false,
             dialogList: [],
+            // 笔录地点和笔录人员
+            getResPeople: resPeople,
+            getResPlace: resPlace,
+            // 选择的多选框
+            newOriginalItem: [],
+            // 一次性请求所有的文档的参数
+            getInput: {},
+            // 说话人
+            getContentStr: '',
+            dialogListIndex: [
+                { name: '治安调解协议书' },
+                { name: '人民调解受理登记表' },
+            ], // 弹出窗列表
+            dialogTableVisibleIndex: false,
+            // 弹出窗
         };
     },
     mounted() {
@@ -241,6 +262,7 @@ export default {
         this.getPersonList();
         this.getLocationList();
         this.initData();
+        // this.generate_records();
     },
     watch: {
         duihualist: {
@@ -253,6 +275,84 @@ export default {
         },
     },
     methods: {
+        // 一次性请求所有的文档
+        async generate_records() {
+            const loadingInstance = ElLoading.service(
+                {
+                    customClass: 'my-custom-loading',
+                    text: '正在生成文档，请稍等...',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                },
+            );
+            const url = 'http://58.246.144.58:8888/generate_records';
+            const headers = {
+                Accept: 'application/json',
+                Authorization: 'Bearer MxwaXdn3jBBigtJniaasCRTrJpe73TWF',
+                'Content-Type': 'application/json',
+            };
+            const data = {
+                input: this.getInput,
+            };
+            try {
+                const response = await axios.post(url, data, { headers });
+                const { 达成协议: xieYiResponse, 登记表: dengJiResponse } = response.data.result;
+                localStorage.setItem('xieYiResponse', JSON.stringify(xieYiResponse));
+                localStorage.setItem('dengJiResponse', JSON.stringify(dengJiResponse));
+                loadingInstance.close();
+            } catch (error) {
+                console.error('请求失败:', error);
+                loadingInstance.close();
+            }
+        },
+        // 'xieyi' and 'dengji'
+        async processXieYi(item) {
+            const loadingInstance = ElLoading.service(
+                {
+                    customClass: 'my-custom-loading',
+                    text: '正在生成文档，请稍等...',
+                    background: 'rgba(0, 0, 0, 0.7)',
+                },
+            );
+            const url = 'http://58.246.144.58:8888/process';
+            const headers = {
+                Accept: 'application/json',
+                Authorization: 'Bearer MxwaXdn3jBBigtJniaasCRTrJpe73TWF',
+                'Content-Type': 'application/json',
+            };
+            const data = {
+                input: this.getContentStr,
+                scenario: item,
+            };
+            try {
+                const response = await axios.post(url, data, { headers });
+                if (item === 'xieyi') {
+                    localStorage.setItem('xieYiResponse', JSON.stringify(response.data.result));
+                }
+                if (item === 'dengji') {
+                    localStorage.setItem('dengJiResponse', JSON.stringify(response.data.result));
+                }
+                loadingInstance.close();
+            } catch (error) {
+                console.error('请求失败:', error);
+                loadingInstance.close();
+            }
+        },
+        // 点击选项
+        hClick(item, itemIndex) {
+            const originalItem = {
+                index: itemIndex,
+                name: item.name,
+                path: item.path,
+                type: item.recordInfo.type,
+            };
+            const index = this.newOriginalItem.findIndex((res) => res.name === item.name);
+            if (index !== -1) {
+                this.newOriginalItem.splice(index, 1); // 如果存在，则删除
+            } else {
+                this.newOriginalItem.push(originalItem);
+            }
+            console.log('this.newOriginalItem', this.newOriginalItem);
+        },
         dianjibiaoqian(item) {
             console.log(item);
             if (this.chatDialog) {
@@ -366,6 +466,7 @@ export default {
                 ElMessage.error('请首先保存当前版本');
             } else {
                 this.$refs.upNewRecordComponent.show(this.selectedLocation, this.selectedPerson, this.dangshifang);
+                console.log('dangshifang', this.dangshifang);
             }
         },
         // 新增文书记录
@@ -662,14 +763,9 @@ export default {
             // }).catch((error) => {
             //     console.error('获取笔录人员列表失败:', error);
             // });
-            const response = [
-                { id: 1, name: '巩培飞' },
-                { id: 2, name: '高美兰' },
-                { id: 3, name: '吴哲' },
-            ];
-            this.personList = response;
+            this.personList = this.getResPeople;
             if (this.personList.length > 0) {
-                        this.selectedPerson = this.personList[0].id;
+                this.selectedPerson = this.personList[0].id;
             }
         },
         // 获取笔录地点列表
@@ -684,10 +780,7 @@ export default {
             // }).catch((error) => {
             //     console.error('获取笔录地点列表失败:', error);
             // });
-            const response = [
-                { id: 1, name: '南京市公安局鼓楼分局宁海路派出所' },
-            ];
-            this.locationList = response;
+            this.locationList = this.getResPlace;
             if (this.locationList.length > 0) {
                 this.selectedLocation = this.locationList[0].id;
             }
@@ -716,7 +809,9 @@ export default {
                     background: 'rgba(0, 0, 0, 0.7)',
                 },
             );
+            console.log('templist******', templist);
             const contentStr = templist.join('\n');
+            this.getContentStr = contentStr;
             console.log('contentStr', contentStr);
             const url = 'http://58.246.144.58:8888/process';
             const headers = {
@@ -732,6 +827,9 @@ export default {
                 const response = await axios.post(url, data, { headers });
                 console.log('请求成功:', response.data);
                 const result = response.data;
+                this.getInput = result;
+                // 获取所有的记录
+                // this.generate_records(result);
                 // 获取当事人标题
                 const keys = Object.keys(result.result);
                 console.log('keys', keys);
@@ -1021,18 +1119,71 @@ export default {
             });
         },
         // 选择跳转的文档
-        handleDialogClick(index, path) {
+        // handleDialogClick(index, path) {
+        //     this.store.commit('setCurrentIndex', index);
+        //     this.dialogTableVisible = false;
+        //     // 此时的index === 3 是用于判断 是否是调解协议文档类型
+        //     if (index === 3) {
+        //         this.CurrentDialogTableVisibleIndex = true;
+        //         this.store.commit('setCurrentDialogTableVisibleIndex');
+        //         // this.dialogTableVisibleIndexRouter = path;
+        //         this.router.push(path);
+        //     } else {
+        //         this.router.push(path);
+        //     }
+        // },
+        handleDialogClick() {
+            // 选择跳转的文档
+            // 判断数组中是否存在 type === 4 的元素(调解协议)
+            const exists = this.newOriginalItem.some((item) => item.type === 4);
+            if (exists) {
+                this.store.commit('setCurrentDialogTableVisibleIndex');
+            }
+            // 判断是否是单选
+            if (this.newOriginalItem.length === 1) {
+                const { index, path } = this.newOriginalItem[0];
+                this.gethandleDialogClick(index, path);
+            } else {
+                // 登记表
+                const foundDengJi = this.newOriginalItem.find((item) => item.type === 3);
+                // 调解协议
+                const foundXieYi = this.newOriginalItem.find((item) => item.type === 4);
+                // 登记表和调解协议是否都存在
+                // 检查登记表和调解协议是否都存在
+                if (foundDengJi && foundXieYi) {
+                    this.dialogTableVisibleIndex = true;
+                } else if (foundDengJi) {
+                    this.processXieYi('dengji');
+                } else if (foundXieYi) {
+                    this.dialogTableVisibleIndex = true;
+                } else {
+                    this.witchNewOriginalItem();
+                }
+            }
+        },
+        gethandleDialogClick(index, path) {
             this.store.commit('setCurrentIndex', index);
             this.dialogTableVisible = false;
-            // 此时的index === 3 是用于判断 是否是调解协议文档类型
-            if (index === 3) {
-                this.CurrentDialogTableVisibleIndex = true;
-                this.store.commit('setCurrentDialogTableVisibleIndex');
-                // this.dialogTableVisibleIndexRouter = path;
-                this.router.push(path);
+            this.router.push(path);
+        },
+        // 选择调解协议文档类型
+        handleDialogClickIndex(index) {
+            // 将setDialogTableVisibleIndex 存入本地
+            localStorage.setItem('dialogTableVisibleIndex', index);
+            // 登记表
+            const foundDengJi = this.newOriginalItem.find((item) => item.type === 3);
+            // 调解协议
+            const foundXieYi = this.newOriginalItem.find((item) => item.type === 4);
+            if (foundDengJi && foundXieYi) {
+                this.generate_records();
             } else {
-                this.router.push(path);
+                this.processXieYi('xieyi');
             }
+            this.dialogTableVisibleIndex = false;
+        },
+        // 用于监听 newOriginalItem
+        witchNewOriginalItem() {
+            // 遍历newOriginalItem 数组，并且根据数组中的path挨个跳转
         },
         processDictToArray(response) {
             const tempitems = [];
@@ -1096,6 +1247,17 @@ export default {
 .el-dialog__header{
     border-bottom: 1px solid #3333;
     margin-bottom: 10px;
+}
+.dialog-content{
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+    justify-content: center;
+}
+.el-checkbox.is-bordered.el-checkbox--large{
+    margin-bottom: 10px;
+    margin-left: 0;
+    margin-right: 0;
 }
 .dialog-content-item{
     display: flex;
